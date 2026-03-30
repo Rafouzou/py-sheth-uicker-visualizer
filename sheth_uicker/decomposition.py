@@ -25,6 +25,8 @@ from sheth_uicker.transforms import (
 )
 
 _TWO_PI = 2.0 * np.pi
+_ANGLE_TOL = 1e-10   # tolerance for treating an angle as zero (radians)
+_DET_TOL = 1e-12     # tolerance for treating a determinant as zero
 
 
 # ── ZXZ Euler decomposition ────────────────────────────────────────────────────
@@ -144,7 +146,7 @@ def solve_translations(
 
     # Fall back to least-squares when the system is rank-deficient
     # (degenerate configurations such as A2 = 0 with L2 = 0).
-    if abs(np.linalg.det(M)) > 1e-12:
+    if abs(np.linalg.det(M)) > _DET_TOL:
         L1, L2, L3 = np.linalg.solve(M, p_rel)
     else:
         L1, L2, L3 = np.linalg.lstsq(M, p_rel, rcond=None)[0]
@@ -205,7 +207,6 @@ def canonicalize_parameters(
     A3 = A3 % _TWO_PI
 
     # ── gimbal-lock special cases ─────────────────────────────────────────────
-    _ANGLE_TOL = 1e-10
 
     if abs(A2) < _ANGLE_TOL:  # A2 ≈ 0
         A2 = 0.0

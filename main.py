@@ -178,7 +178,11 @@ def main(argv: Optional[List[str]] = None) -> None:
     err = frobenius_error(T_rel_ref, T_rel)
     print(f"\nReconstruction Frobenius error: {err:.2e}")
     if err > 1e-8:
-        print("WARNING: reconstruction error is large.", file=sys.stderr)
+        print(
+            f"WARNING: reconstruction error {err:.2e} exceeds expected threshold "
+            "(1e-8). The decomposition may be inaccurate.",
+            file=sys.stderr,
+        )
 
     # Build decomposition chain for visualisation
     chain = decomposition_chain(
