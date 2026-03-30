@@ -250,7 +250,7 @@ elementary_translation(axis: str, distance: float) -> ndarray[4,4]
 decompose_zxz(R: ndarray) -> tuple[float, float, float]        # (A1, A2, A3) rad
 rotation_zxz(A1, A2, A3: float) -> ndarray[3,3]
 solve_translations(R_rel, p_rel, A1, A2, A3: float) -> tuple[float, float, float]  # (L1, L2, L3)
-canonicalize_parameters(A1, A2, A3, L1, L2, L3: float) -> tuple[float, float, float, float, float, float]  # returns (A1, A2, A3, L1, L2, L3)
+canonicalize_parameters(A1: float, A2: float, A3: float, L1: float, L2: float, L3: float) -> tuple[float, float, float, float, float, float]  # returns (A1, A2, A3, L1, L2, L3)
 compute_sheth_uicker(T1: ndarray, T2: ndarray) -> dict          # returns all 6 params
 
 # ── Reconstruction / validation ───────────────────────────────────────────────
