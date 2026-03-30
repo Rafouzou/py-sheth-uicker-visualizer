@@ -10,28 +10,146 @@ Z is world-up.
 
 Usage
 -----
+    # Default (hardcoded frames)
     python main.py
+
+    # Override source/destination via CLI flags
+    python main.py --source-pos 1 0 0 --source-rpy 0 0 1.5708 \\
+                   --dest-pos -1 0 0 --dest-rpy 0 0 0
+
+    # Load poses from a JSON config file
+    python main.py --config path/to/config.json
+
+    # JSON config + CLI override (CLI wins for any flag provided)
+    python main.py --config path/to/config.json --dest-rpy 0 0 0.5
+
+Orientation convention
+----------------------
+Roll/pitch/yaw (RPY) uses **intrinsic ZYX** order (equivalent to extrinsic XYZ):
+
+    R = Rz(yaw) @ Ry(pitch) @ Rx(roll)
+
+All angles are in **radians**.
 """
+
+import argparse
+import sys
+from typing import List, Optional
 
 import numpy as np
 
-from sheth_uicker.transforms import build_homogeneous, identity_frame
+from sheth_uicker.config import load_config
+from sheth_uicker.transforms import build_homogeneous, rpy_to_matrix
 from sheth_uicker.visualisation import render_scene
 
-
-def _default_source_frame() -> np.ndarray:
-    """Source frame at x = +1, identity rotation."""
-    return build_homogeneous(np.eye(3), [1.0, 0.0, 0.0])
-
-
-def _default_dest_frame() -> np.ndarray:
-    """Destination frame at x = -1, identity rotation."""
-    return build_homogeneous(np.eye(3), [-1.0, 0.0, 0.0])
+# ── Defaults ───────────────────────────────────────────────────────────────────
+_DEFAULT_SOURCE_POS = [1.0, 0.0, 0.0]
+_DEFAULT_SOURCE_RPY = [0.0, 0.0, 0.0]
+_DEFAULT_DEST_POS   = [-1.0, 0.0, 0.0]
+_DEFAULT_DEST_RPY   = [0.0, 0.0, 0.0]
 
 
-def main() -> None:
-    T_source = _default_source_frame()
-    T_dest = _default_dest_frame()
+# ── CLI ────────────────────────────────────────────────────────────────────────
+
+def _build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="python main.py",
+        description=(
+            "Sheth-Uicker visualizer: display two 3-D coordinate frames.\n\n"
+            "Orientation convention: intrinsic ZYX RPY — R = Rz(yaw) @ Ry(pitch) @ Rx(roll).\n"
+            "All angles are in radians."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    p.add_argument(
+        "--config",
+        metavar="FILE",
+        help="Path to a JSON config file describing source and destination frame poses. "
+             "CLI flags override any values loaded from the config.",
+    )
+
+    # Source frame
+    p.add_argument(
+        "--source-pos",
+        nargs=3,
+        type=float,
+        metavar=("X", "Y", "Z"),
+        help="Source frame position in world coordinates (default: 1 0 0).",
+    )
+    p.add_argument(
+        "--source-rpy",
+        nargs=3,
+        type=float,
+        metavar=("ROLL", "PITCH", "YAW"),
+        help="Source frame orientation as roll/pitch/yaw in radians (default: 0 0 0). "
+             "Uses intrinsic ZYX convention: R = Rz(yaw) @ Ry(pitch) @ Rx(roll).",
+    )
+
+    # Destination frame
+    p.add_argument(
+        "--dest-pos",
+        nargs=3,
+        type=float,
+        metavar=("X", "Y", "Z"),
+        help="Destination frame position in world coordinates (default: -1 0 0).",
+    )
+    p.add_argument(
+        "--dest-rpy",
+        nargs=3,
+        type=float,
+        metavar=("ROLL", "PITCH", "YAW"),
+        help="Destination frame orientation as roll/pitch/yaw in radians (default: 0 0 0). "
+             "Uses intrinsic ZYX convention: R = Rz(yaw) @ Ry(pitch) @ Rx(roll).",
+    )
+
+    return p
+
+
+# ── frame construction ─────────────────────────────────────────────────────────
+
+def _make_frame(pos: List[float], rpy: List[float]) -> np.ndarray:
+    R = rpy_to_matrix(rpy[0], rpy[1], rpy[2])
+    return build_homogeneous(R, pos)
+
+
+# ── main ───────────────────────────────────────────────────────────────────────
+
+def main(argv: Optional[List[str]] = None) -> None:
+    parser = _build_parser()
+    args = parser.parse_args(argv)
+
+    # 1. Start from hardcoded defaults.
+    source_pos = list(_DEFAULT_SOURCE_POS)
+    dest_pos   = list(_DEFAULT_DEST_POS)
+    src_R: np.ndarray = rpy_to_matrix(*_DEFAULT_SOURCE_RPY)
+    dst_R: np.ndarray = rpy_to_matrix(*_DEFAULT_DEST_RPY)
+
+    # 2. Override with config file values (if provided).
+    if args.config:
+        try:
+            cfg = load_config(args.config)
+        except (FileNotFoundError, ValueError) as exc:
+            print(f"Error loading config: {exc}", file=sys.stderr)
+            sys.exit(1)
+
+        source_pos = cfg.source.position.tolist()
+        dest_pos   = cfg.destination.position.tolist()
+        src_R = cfg.source.rotation
+        dst_R = cfg.destination.rotation
+
+    # 3. Apply CLI overrides (CLI always wins).
+    if args.source_pos is not None:
+        source_pos = args.source_pos
+    if args.dest_pos is not None:
+        dest_pos = args.dest_pos
+    if args.source_rpy is not None:
+        src_R = rpy_to_matrix(*args.source_rpy)
+    if args.dest_rpy is not None:
+        dst_R = rpy_to_matrix(*args.dest_rpy)
+
+    T_source = build_homogeneous(src_R, source_pos)
+    T_dest   = build_homogeneous(dst_R, dest_pos)
 
     print("Source frame T:")
     print(T_source)
