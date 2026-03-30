@@ -3,7 +3,7 @@
 import numpy as np
 
 
-def build_homogeneous(R: np.ndarray, p) -> np.ndarray:
+def build_homogeneous(R: np.ndarray, p: np.ndarray) -> np.ndarray:
     """Assemble a 4×4 homogeneous transformation matrix from a rotation and a position.
 
     Parameters
