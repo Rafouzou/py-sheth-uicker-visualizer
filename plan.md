@@ -197,6 +197,21 @@ Functions needed:
 
 - `solve_translations(R_rel, p_rel, A1, A2, A3)` → `(L1, L2, L3)`
 
+**Canonicalization (bijection constraints):**
+
+After extracting the six parameters, normalize them to ensure a **unique** representation for any spatial relationship (bijection). The implementation will enforce:
+
+- **L1 ∈ ℝ**
+- **L2 ∈ ℝ⁺ (L2 ≥ 0)**
+- **L3 ∈ ℝ**
+- **A1 ∈ [0, 2π[**
+- **A2 ∈ [0, π[**
+- **A3 ∈ [0, 2π[**
+- **(A2 = 0) ⇒ (L3 = 0)**
+- **(L2 = 0 ∧ A2 = 0) ⇒ (A3 = 0)**
+
+This step ensures the parameter set is canonical and eliminates ambiguous solutions that represent the same transform.
+
 ---
 
 ### Step 7 — Validation
@@ -235,6 +250,7 @@ elementary_translation(axis: str, distance: float) -> ndarray[4,4]
 decompose_zxz(R: ndarray) -> tuple[float, float, float]        # (A1, A2, A3) rad
 rotation_zxz(A1, A2, A3: float) -> ndarray[3,3]
 solve_translations(R_rel, p_rel, A1, A2, A3: float) -> tuple[float, float, float]  # (L1, L2, L3)
+canonicalize_parameters(A1, A2, A3, L1, L2, L3: float) -> tuple[float, float, float, float, float, float]
 compute_sheth_uicker(T1: ndarray, T2: ndarray) -> dict          # returns all 6 params
 
 # ── Reconstruction / validation ───────────────────────────────────────────────
@@ -268,6 +284,9 @@ def compute_and_visualize(frame1, frame2):
 
     # 4. Translation extraction
     L1, L2, L3 = solve_translations(R_rel, p_rel, A1, A2, A3)
+
+    # 4b. Canonicalize parameters for bijection
+    A1, A2, A3, L1, L2, L3 = canonicalize_parameters(A1, A2, A3, L1, L2, L3)
 
     # 5. Validate
     T_check = reconstruct_transform(A1, L1, A2, L2, A3, L3)
