@@ -39,7 +39,9 @@ from typing import List, Optional
 import numpy as np
 
 from sheth_uicker.config import load_config
+from sheth_uicker.decomposition import compute_sheth_uicker
 from sheth_uicker.transforms import build_homogeneous, rpy_to_matrix
+from sheth_uicker.validation import decomposition_chain, frobenius_error, reconstruct_transform
 from sheth_uicker.visualisation import render_scene
 
 # ── Defaults ───────────────────────────────────────────────────────────────────
@@ -156,7 +158,37 @@ def main(argv: Optional[List[str]] = None) -> None:
     print("\nDestination frame T:")
     print(T_dest)
 
-    render_scene(T_source, T_dest)
+    # Compute Sheth-Uicker decomposition
+    params = compute_sheth_uicker(T_source, T_dest)
+
+    import math
+    print("\nSheth-Uicker Parameters:")
+    print(f"  A1 = {math.degrees(params['A1']):.4f} deg   L1 = {params['L1']:.6f}")
+    print(f"  A2 = {math.degrees(params['A2']):.4f} deg   L2 = {params['L2']:.6f}")
+    print(f"  A3 = {math.degrees(params['A3']):.4f} deg   L3 = {params['L3']:.6f}")
+
+    # Validate reconstruction
+    T_rel = reconstruct_transform(
+        params["A1"], params["L1"],
+        params["A2"], params["L2"],
+        params["A3"], params["L3"],
+    )
+    from sheth_uicker.transforms import relative_transform
+    T_rel_ref = relative_transform(T_source, T_dest)
+    err = frobenius_error(T_rel_ref, T_rel)
+    print(f"\nReconstruction Frobenius error: {err:.2e}")
+    if err > 1e-8:
+        print("WARNING: reconstruction error is large.", file=sys.stderr)
+
+    # Build decomposition chain for visualisation
+    chain = decomposition_chain(
+        T_source,
+        params["A1"], params["L1"],
+        params["A2"], params["L2"],
+        params["A3"], params["L3"],
+    )
+
+    render_scene(T_source, T_dest, params=params, chain=chain)
 
 
 if __name__ == "__main__":

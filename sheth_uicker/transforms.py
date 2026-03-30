@@ -72,3 +72,110 @@ def build_homogeneous(R: np.ndarray, p: np.ndarray) -> np.ndarray:
 def identity_frame() -> np.ndarray:
     """Return a 4×4 identity transformation (origin at zero, axes aligned with world)."""
     return np.eye(4)
+
+
+def invert_homogeneous(T: np.ndarray) -> np.ndarray:
+    """Compute the inverse of a rigid-body (homogeneous) transformation matrix.
+
+    Uses the closed-form inverse for SE(3):
+
+        T⁻¹ = | Rᵀ  −Rᵀ·p |
+              |  0     1   |
+
+    Parameters
+    ----------
+    T : ndarray (4, 4)
+        Rigid-body transformation matrix.
+
+    Returns
+    -------
+    T_inv : ndarray (4, 4)
+    """
+    R = T[:3, :3]
+    p = T[:3, 3]
+    T_inv = np.eye(4)
+    T_inv[:3, :3] = R.T
+    T_inv[:3, 3] = -R.T @ p
+    return T_inv
+
+
+def relative_transform(T1: np.ndarray, T2: np.ndarray) -> np.ndarray:
+    """Return the transformation that maps frame 1 into frame 2, expressed in frame 1.
+
+        T_rel = T1⁻¹ · T2
+
+    Parameters
+    ----------
+    T1, T2 : ndarray (4, 4)
+        Source and destination homogeneous transforms.
+
+    Returns
+    -------
+    T_rel : ndarray (4, 4)
+    """
+    return invert_homogeneous(T1) @ T2
+
+
+def extract_rotation(T: np.ndarray) -> np.ndarray:
+    """Return the 3×3 rotation block of a 4×4 homogeneous matrix."""
+    return T[:3, :3].copy()
+
+
+def extract_translation(T: np.ndarray) -> np.ndarray:
+    """Return the 3-vector translation column of a 4×4 homogeneous matrix."""
+    return T[:3, 3].copy()
+
+
+def elementary_rotation(axis: str, angle: float) -> np.ndarray:
+    """Build a 4×4 homogeneous matrix for a pure rotation about a world axis.
+
+    Parameters
+    ----------
+    axis  : 'x', 'y', or 'z'
+    angle : rotation angle in radians
+
+    Returns
+    -------
+    T : ndarray (4, 4)
+    """
+    c, s = np.cos(angle), np.sin(angle)
+    axis = axis.lower()
+    if axis == "x":
+        R = np.array([[1, 0,  0],
+                      [0, c, -s],
+                      [0, s,  c]], dtype=float)
+    elif axis == "y":
+        R = np.array([[ c, 0, s],
+                      [ 0, 1, 0],
+                      [-s, 0, c]], dtype=float)
+    elif axis == "z":
+        R = np.array([[c, -s, 0],
+                      [s,  c, 0],
+                      [0,  0, 1]], dtype=float)
+    else:
+        raise ValueError(f"axis must be 'x', 'y', or 'z'; got '{axis}'")
+    return build_homogeneous(R, [0.0, 0.0, 0.0])
+
+
+def elementary_translation(axis: str, distance: float) -> np.ndarray:
+    """Build a 4×4 homogeneous matrix for a pure translation along a world axis.
+
+    Parameters
+    ----------
+    axis     : 'x', 'y', or 'z'
+    distance : translation distance
+
+    Returns
+    -------
+    T : ndarray (4, 4)
+    """
+    axis = axis.lower()
+    if axis == "x":
+        p = [distance, 0.0, 0.0]
+    elif axis == "y":
+        p = [0.0, distance, 0.0]
+    elif axis == "z":
+        p = [0.0, 0.0, distance]
+    else:
+        raise ValueError(f"axis must be 'x', 'y', or 'z'; got '{axis}'")
+    return build_homogeneous(np.eye(3), p)
