@@ -204,9 +204,9 @@ After extracting the six parameters, normalize them to ensure a **unique** repre
 - **L1 ∈ ℝ**
 - **L2 ∈ ℝ⁺ (L2 ≥ 0)**
 - **L3 ∈ ℝ**
-- **A1 ∈ [0, 2π)**
-- **A2 ∈ [0, π)**
-- **A3 ∈ [0, 2π)**
+- **A1 ∈ [0, 2π[**
+- **A2 ∈ [0, π[**
+- **A3 ∈ [0, 2π[**
 - **(A2 = 0) ⇒ (L3 = 0)**
 - **(L2 = 0 ∧ A2 = 0) ⇒ (A3 = 0)**
 
