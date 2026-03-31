@@ -202,10 +202,10 @@ Functions needed:
 After extracting the six parameters, normalize them to ensure a **unique** representation for any spatial relationship (bijection). The implementation will enforce:
 
 - **L1 ∈ ℝ**
-- **L2 ∈ ℝ⁺ (L2 ≥ 0)**
+- **L2 ≥ 0**
 - **L3 ∈ ℝ**
 - **A1 ∈ [0, 2π[**
-- **A2 ∈ [0, π[**
+- **A2 ∈ (−π, π)**
 - **A3 ∈ [0, 2π[**
 - **(A2 = 0) ⇒ (L3 = 0)**
 - **(L2 = 0 ∧ A2 = 0) ⇒ (A3 = 0)**
