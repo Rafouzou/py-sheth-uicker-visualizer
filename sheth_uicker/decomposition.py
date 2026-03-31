@@ -171,22 +171,24 @@ def canonicalize_parameters(
     1. L2 ≥ 0: when L2 < 0 and A2 is non-degenerate, apply the equivalence
           Rz(A1)·Tz(L1)·Rx(A2)·Tx(L2)·Rz(A3)·Tz(L3)
         = Rz(A1+π)·Tz(L1)·Rx(−A2)·Tx(−L2)·Rz(A3+π)·Tz(L3)
-       to flip the signs of A2 and L2.  After this step A2 ∈ (−π, π).
-    2. A1, A3 wrapped to [0, 2π)
+       to flip the signs of A2 and L2.
+    2. A1, A2, A3 wrapped to [0, 2π)  (Rx is 2π-periodic, so wrapping A2
+       is always valid)
     3. (A2 = 0) ⇒ (L3 = 0)          — L3 is absorbed into L1
     4. (L2 = 0 ∧ A2 = 0) ⇒ (A3 = 0) — A3 is absorbed into A1
 
     Parameters
     ----------
     A1, A2, A3 : float   — ZXZ angles (radians); A2 is expected in [0, π]
-                           as returned by :func:`decompose_zxz`.  After
-                           canonicalization A2 ∈ (−π, π) (see Returns).
+                           as returned by :func:`decompose_zxz` (the L2 ≥ 0
+                           sign-flip below may negate it before wrapping).
+                           After canonicalization A2 ∈ [0, 2π) (see Returns).
     L1, L2, L3 : float   — translation parameters
 
     Returns
     -------
     (A1, A2, A3, L1, L2, L3) : tuple[float, float, float, float, float, float]
-        Canonical parameters with L2 ≥ 0 and A2 ∈ (−π, π).
+        Canonical parameters with L2 ≥ 0 and A1, A2, A3 ∈ [0, 2π).
     """
     # ── enforce L2 ≥ 0 ────────────────────────────────────────────────────────
     # The equivalence Rz(A1+π)·Tz(L1)·Rx(−A2)·Tx(−L2)·Rz(A3+π)·Tz(L3) lets
@@ -199,8 +201,9 @@ def canonicalize_parameters(
         A3 = A3 + np.pi
         L2 = -L2
 
-    # ── wrap A1, A3 to [0, 2π) ────────────────────────────────────────────────
+    # ── wrap A1, A2, A3 to [0, 2π) ───────────────────────────────────────────
     A1 = A1 % _TWO_PI
+    A2 = A2 % _TWO_PI
     A3 = A3 % _TWO_PI
 
     # ── gimbal-lock special cases ─────────────────────────────────────────────

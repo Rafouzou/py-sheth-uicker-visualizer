@@ -130,7 +130,7 @@ class TestCanonicalizeParameters:
 
         # Angle range constraints
         assert 0.0 <= cA1 < 2 * math.pi + 1e-10, f"A1={cA1} out of [0, 2π)"
-        assert abs(cA2) < math.pi + 1e-10,        f"A2={cA2} out of (−π, π)"
+        assert 0.0 <= cA2 < 2 * math.pi + 1e-10, f"A2={cA2} out of [0, 2π)"
         assert 0.0 <= cA3 < 2 * math.pi + 1e-10, f"A3={cA3} out of [0, 2π)"
         # L2 ≥ 0 constraint
         assert cL2 >= -1e-10, f"L2={cL2} must be non-negative"
@@ -149,10 +149,18 @@ class TestCanonicalizeParameters:
         self._check_bijection(7.0, 1.0, 0.7, 1.0, 1.0, 0.5)
 
     def test_negative_l2_flipped_to_positive(self):
-        """Canonicalization must flip L2 to positive (and negate A2) when L2<0."""
-        cA1, cA2, cA3, cL1, cL2, cL3 = canonicalize_parameters(0.3, 1.0, 0.5, 1.0, -2.0, 0.5)
+        """Canonicalization must flip L2 to positive (negate A2, shift A1/A3 by π) when L2<0."""
+        A1_in, A2_in, A3_in, L2_in = 0.3, 1.0, 0.5, -2.0
+        cA1, cA2, cA3, cL1, cL2, cL3 = canonicalize_parameters(A1_in, A2_in, A3_in, 1.0, L2_in, 0.5)
         assert cL2 >= -1e-10, f"L2={cL2} must be non-negative after canonicalization"
-        self._check_bijection(0.3, 1.0, 0.5, 1.0, -2.0, 0.5)
+        # A2 was negated then wrapped to [0, 2π)
+        import numpy as np
+        expected_A2 = (-A2_in) % (2 * math.pi)
+        assert abs(cA2 - expected_A2) < 1e-10, f"A2={cA2} expected {expected_A2}"
+        # A1 and A3 each shifted by π
+        assert abs(cA1 - (A1_in + math.pi) % (2 * math.pi)) < 1e-10
+        assert abs(cA3 - (A3_in + math.pi) % (2 * math.pi)) < 1e-10
+        self._check_bijection(A1_in, A2_in, A3_in, 1.0, L2_in, 0.5)
 
     def test_a2_zero_l3_absorbed(self):
         """When A2 ≈ 0, L3 must be absorbed into L1 and set to zero."""
@@ -211,7 +219,7 @@ class TestComputeShethUicker:
         T2 = _make_T([0, 1, 0], (0.5, 0.7, 1.1))
         params = compute_sheth_uicker(T1, T2)
         assert 0.0 <= params["A1"] < 2 * math.pi + 1e-10
-        assert abs(params["A2"]) < math.pi + 1e-10
+        assert 0.0 <= params["A2"] < 2 * math.pi + 1e-10
         assert 0.0 <= params["A3"] < 2 * math.pi + 1e-10
         assert params["L2"] >= -1e-10
 
