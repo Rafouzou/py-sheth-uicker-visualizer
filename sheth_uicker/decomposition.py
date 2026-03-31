@@ -168,42 +168,42 @@ def canonicalize_parameters(
 
     Constraints applied (in order):
 
-    1. A2 normalised to [0, 2π) then folded to [0, π)
-    2. A1, A3 wrapped to [0, 2π)
+    1. L2 ≥ 0: when L2 < 0 and A2 is non-degenerate, apply the equivalence
+          Rz(A1)·Tz(L1)·Rx(A2)·Tx(L2)·Rz(A3)·Tz(L3)
+        = Rz(A1+π)·Tz(L1)·Rx(−A2)·Tx(−L2)·Rz(A3+π)·Tz(L3)
+       to flip the signs of A2 and L2.
+    2. A1, A2, A3 wrapped to [0, 2π)  (Rx is 2π-periodic, so wrapping A2
+       is always valid)
     3. (A2 = 0) ⇒ (L3 = 0)          — L3 is absorbed into L1
     4. (L2 = 0 ∧ A2 = 0) ⇒ (A3 = 0) — A3 is absorbed into A1
 
-    Note on L2: when A2 ∈ (0, π) the linear system for the translations has a
-    unique solution which may yield L2 < 0.  No additional sign constraint is
-    enforced here; the sign of L2 is part of the unique canonical representation
-    (it encodes the directed offset along the common perpendicular between the
-    two Z-axes).
-
     Parameters
     ----------
-    A1, A2, A3 : float   — ZXZ angles (radians, any range)
+    A1, A2, A3 : float   — ZXZ angles (radians); A2 is expected in [0, π]
+                           as returned by :func:`decompose_zxz` (the L2 ≥ 0
+                           sign-flip below may negate it before wrapping).
+                           After canonicalization A2 ∈ [0, 2π) (see Returns).
     L1, L2, L3 : float   — translation parameters
 
     Returns
     -------
     (A1, A2, A3, L1, L2, L3) : tuple[float, float, float, float, float, float]
-        Canonical parameters.
+        Canonical parameters with L2 ≥ 0 and A1, A2, A3 ∈ [0, 2π).
     """
-    # ── enforce A2 ∈ [0, π) ───────────────────────────────────────────────────
-    # Normalise A2 to [0, 2π) first, then fold into [0, π).
-    # Equivalence: Rz(A1)·Rx(A2)·Rz(A3) = Rz(A1+π)·Rx(2π−A2)·Rz(A3+π)
-    # Note: this rotation equivalence only applies to the rotation part; when
-    # A2 is already in [0, π) after the atan2 decomposition (as enforced by
-    # decompose_zxz), no fold is needed.  The modulo handles edge-cases where
-    # callers pass angles outside [0, 2π).
-    A2 = A2 % _TWO_PI
-    if A2 >= np.pi:
-        A2 = _TWO_PI - A2
+    # ── enforce L2 ≥ 0 ────────────────────────────────────────────────────────
+    # The equivalence Rz(A1+π)·Tz(L1)·Rx(−A2)·Tx(−L2)·Rz(A3+π)·Tz(L3) lets
+    # us always choose L2 ≥ 0.  The flip is valid only when A2 is
+    # non-degenerate (sin(A2) ≠ 0); at A2 = 0 the screw axes are collinear and
+    # the sign of L2 cannot be changed independently.
+    if L2 < 0.0 and abs(np.sin(A2)) > _ANGLE_TOL:
         A1 = A1 + np.pi
+        A2 = -A2
         A3 = A3 + np.pi
+        L2 = -L2
 
-    # ── wrap A1, A3 to [0, 2π) ────────────────────────────────────────────────
+    # ── wrap A1, A2, A3 to [0, 2π) ───────────────────────────────────────────
     A1 = A1 % _TWO_PI
+    A2 = A2 % _TWO_PI
     A3 = A3 % _TWO_PI
 
     # ── gimbal-lock special cases ─────────────────────────────────────────────
