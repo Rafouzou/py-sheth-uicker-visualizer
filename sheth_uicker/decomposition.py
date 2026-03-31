@@ -192,10 +192,10 @@ def canonicalize_parameters(
     """
     # ── enforce L2 ≥ 0 ────────────────────────────────────────────────────────
     # The equivalence Rz(A1+π)·Tz(L1)·Rx(−A2)·Tx(−L2)·Rz(A3+π)·Tz(L3) lets
-    # us always choose L2 ≥ 0.  The flip is valid only when A2 is
-    # non-degenerate (sin(A2) ≠ 0); at A2 = 0 the screw axes are collinear and
-    # the sign of L2 cannot be changed independently.
-    if L2 < 0.0 and abs(np.sin(A2)) > _ANGLE_TOL:
+    # us always choose L2 ≥ 0.  When A2 = 0 (or ±π) we have Rx(A2)=Rx(−A2),
+    # so the flip A2→−A2 leaves the rotation unchanged and the sign of L2 can
+    # still be changed via the A1/A3 shift.
+    if L2 < 0.0:
         A1 = A1 + np.pi
         A2 = -A2
         A3 = A3 + np.pi
