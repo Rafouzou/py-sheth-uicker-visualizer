@@ -163,9 +163,9 @@ def main(argv: Optional[List[str]] = None) -> None:
 
     import math
     print("\nSheth-Uicker Parameters:")
-    print(f"  A1 = {math.degrees(params['A1']):.4f} deg   L1 = {params['L1']:.6f}")
-    print(f"  A2 = {math.degrees(params['A2']):.4f} deg   L2 = {params['L2']:.6f}")
-    print(f"  A3 = {math.degrees(params['A3']):.4f} deg   L3 = {params['L3']:.6f}")
+    print(f"  A1 = {math.degrees(params['A1']):.4f} deg    L1 = {params['L1']:.6f}")
+    print(f"  A12 = {math.degrees(params['A2']):.4f} deg   L12 = {params['L2']:.6f}")
+    print(f"  A2 = {math.degrees(params['A3']):.4f} deg    L2 = {params['L3']:.6f}")
 
     # Validate reconstruction
     T_rel = reconstruct_transform(

@@ -161,10 +161,10 @@ def render_scene(
             "",
             f"  A1 = {math.degrees(params['A1']):8.3f} °",
             f"  L1 = {params['L1']:8.4f}",
-            f"  A2 = {math.degrees(params['A2']):8.3f} °",
-            f"  L2 = {params['L2']:8.4f}",
-            f"  A3 = {math.degrees(params['A3']):8.3f} °",
-            f"  L3 = {params['L3']:8.4f}",
+            f"  A12 = {math.degrees(params['A2']):8.3f} °",
+            f"  L12 = {params['L2']:8.4f}",
+            f"  A2 = {math.degrees(params['A3']):8.3f} °",
+            f"  L2 = {params['L3']:8.4f}",
         ]
         ax2.text(
             0.05, 0.55, "\n".join(lines),
